@@ -155,7 +155,7 @@ class NARModel(nn.Module):
 #         log_p = _log_p.gather(2, a.unsqueeze(-1)).squeeze(-1)
 #         assert (log_p > -1000).data.all(), "Logprobs should not be -inf, check sampling procedure!"
 
-        nei = [[[i,j] for i,j in zip(a[j].numpy(), a[j].numpy()[1:])] for j in range(a.size(0))]
+        nei = [[[i,j] for i,j in zip(a[j].cpu().numpy(), a[j].cpu().numpy()[1:])] for j in range(a.size(0))]
         out = np.zeros(a.size(0))
         for i, nei_bat in enumerate(nei):
             for idx in nei_bat:
@@ -163,7 +163,7 @@ class NARModel(nn.Module):
             out[i] += _log_p[i, idx[1], 0]
             
         # Calculate log_likelihood
-        return torch.tensor(out)
+        return torch.tensor(out).to(self.device)
 
     def beam_search(self, nodes, graph, car_num, beam_size):
         """Method to perform graph search (beam search or greedy search)
