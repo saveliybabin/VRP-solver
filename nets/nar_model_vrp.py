@@ -163,7 +163,7 @@ class NARModel(nn.Module):
             out[i] += _log_p[i, idx[1], 0]
             
         # Calculate log_likelihood
-        return torch.tensor(out).to(self.device)
+        return torch.tensor(out)
 
     def beam_search(self, nodes, graph, car_num, beam_size):
         """Method to perform graph search (beam search or greedy search)
