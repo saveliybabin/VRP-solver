@@ -135,7 +135,7 @@ class GNNEncoder(nn.Module):
                  learn_norm=True, track_norm=False, gated=True, *args, **kwargs):
         super(GNNEncoder, self).__init__()
 
-        self.init_embed_edges = nn.Embedding(2, hidden_dim)
+        self.init_embed_edges = nn.Embedding(3, hidden_dim)
 
         self.layers = nn.ModuleList([
             GNNLayer(hidden_dim, aggregation, norm, learn_norm, track_norm, gated)
