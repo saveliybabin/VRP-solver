@@ -38,8 +38,6 @@ def validate(model, dataset, problem, opts):
         cost.mean(), torch.std(cost)))
     print('Validation optimality gap: {:.3f}% +- {:.3f}'.format(
         opt_gap.mean(), torch.std(opt_gap)))
-    self.gaps.append(opt_gap.mean())
-    self.gaps_error.append(torch.std(opt_gap))
 
     return cost.mean(), opt_gap.mean()
 
