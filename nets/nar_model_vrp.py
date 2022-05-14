@@ -124,31 +124,31 @@ class NARModel(nn.Module):
                 return cost, ll, pi
             return cost, ll
 
-#     def _init_embed(self, nodes):
-#         return self.init_embed(nodes)
-    
-    
     def _init_embed(self, nodes):
-#         if self.is_vrp or self.is_orienteering or self.is_pctsp:
-#             if self.is_vrp:
-        features = ('demand', )
-#             elif self.is_orienteering:
-#                 features = ('prize', )
-#             else:
-#                 assert self.is_pctsp
-#                 features = ('deterministic_prize', 'penalty')
-        return torch.cat(
-            (
-                self.init_embed_depot(nodes[:, 0, :2])[:, None, :],
-                self.init_embed(torch.cat((
-                    nodes[:, 1:, :2],
-                    *(nodes[:, 1:, 2][:, :, None] for feat in features)
-                ), -1))
-            ),
-            1
-        )
+        return self.init_embed(nodes)
+    
+    
+#     def _init_embed(self, nodes):
+# #         if self.is_vrp or self.is_orienteering or self.is_pctsp:
+# #             if self.is_vrp:
+#         features = ('demand', )
+# #             elif self.is_orienteering:
+# #                 features = ('prize', )
+# #             else:
+# #                 assert self.is_pctsp
+# #                 features = ('deterministic_prize', 'penalty')
+#         return torch.cat(
+#             (
+#                 self.init_embed_depot(nodes[:, 0, :2])[:, None, :],
+#                 self.init_embed(torch.cat((
+#                     nodes[:, 1:, :2],
+#                     *(nodes[:, 1:, 2][:, :, None] for feat in features)
+#                 ), -1))
+#             ),
+#             1
+#         )
         
-#         return self.init_embed(nodes)
+# #         return self.init_embed(nodes)
 
     def _inner(self, nodes, graph):
         """
