@@ -62,6 +62,7 @@ class NARModel(nn.Module):
         self.mask_graph = mask_graph
         
         # Input embedding layer
+        self.init_embed_depot = nn.Linear(2, embedding_dim)
         self.init_embed = nn.Linear(3, embedding_dim, bias=True)        
         
         # Encoder model
@@ -78,6 +79,7 @@ class NARModel(nn.Module):
         self.project_node_emb = nn.Linear(embedding_dim, embedding_dim, bias=True)
         self.project_graph_emb = nn.Linear(embedding_dim, embedding_dim, bias=True)
         self.edge_pred = nn.Linear(embedding_dim, 2, bias=True)
+        
 
     def set_decode_type(self, decode_type, **kwargs):
         self.decode_type = decode_type
@@ -122,8 +124,31 @@ class NARModel(nn.Module):
                 return cost, ll, pi
             return cost, ll
 
+#     def _init_embed(self, nodes):
+#         return self.init_embed(nodes)
+    
+    
     def _init_embed(self, nodes):
-        return self.init_embed(nodes)
+#         if self.is_vrp or self.is_orienteering or self.is_pctsp:
+#             if self.is_vrp:
+        features = ('demand', )
+#             elif self.is_orienteering:
+#                 features = ('prize', )
+#             else:
+#                 assert self.is_pctsp
+#                 features = ('deterministic_prize', 'penalty')
+        return torch.cat(
+            (
+                self.init_embed_depot(nodes[:, 0, :2])[:, None, :],
+                self.init_embed(torch.cat((
+                    nodes[:, 1:, :2],
+                    *(nodes[:, 1:, 2][:, :, None] for feat in features)
+                ), -1))
+            ),
+            1
+        )
+        
+#         return self.init_embed(nodes)
 
     def _inner(self, nodes, graph):
         """
@@ -135,6 +160,7 @@ class NARModel(nn.Module):
         
         # Compute node embeddings
         embeddings = self.embedder(self._init_embed(nodes), graph)
+        
         
         # Compute edge embeddings (B x V x V x H)
         Ux = self.project_node_emb(embeddings)
