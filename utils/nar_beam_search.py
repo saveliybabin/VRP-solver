@@ -110,7 +110,7 @@ class Beamsearch(object):
         new_nodes = new_nodes.unsqueeze(2).expand_as(self.mask)
         update_mask = 1 - torch.eq(arr, new_nodes).type(torch.float).to(self.device)
         self.mask = self.mask * update_mask
-        self.mask[:, :, 0] = 1.5
+        self.mask[:, :, 0] = 2.5
         self.mask[self.mask == 0] = 1e10
         self.mask[:, :, 0][(self.zero_num >= self.car_num).nonzero(as_tuple=True)] = 1e10
 
