@@ -36,7 +36,7 @@ class Beamsearch(object):
         # Set beamsearch starting nodes
         self.start_nodes = torch.zeros(batch_size, beam_size, dtype=torch.long).to(self.device)
         # Set counter of zeros in tour
-        self.zero_num = torch.ones(batch_size, dtype=torch.int64).to(self.device)
+        self.zero_num = torch.ones(batch_size, beam_size, dtype=torch.int64).to(self.device)
         # Mask for constructing valid hypothesis
         self.mask = torch.ones(batch_size, beam_size, num_nodes, dtype=torch.float).to(self.device)
         # Mask the starting node of the beam search
