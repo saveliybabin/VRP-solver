@@ -51,9 +51,9 @@ class CVRP(object):
         batch_size, graph_size, _ = dataset.size()
         # Check that tours are valid, i.e. contain 0 to n -1
         sorted_pi = pi.data.sort(1)[0]
-        print(torch.arange(0, graph_size, out=pi.data.new()).view(1, -1).expand(batch_size, graph_size))
-        print(sorted_pi[:, -graph_size:])
-        print((sorted_pi[:, :-graph_size] == 0).all())
+#         print(torch.arange(0, graph_size, out=pi.data.new()).view(1, -1).expand(batch_size, graph_size))
+#         print(sorted_pi[:, -graph_size:])
+#         print((sorted_pi[:, :-graph_size] == 0).all())
         # Sorting it should give all zeros at front and then 1...n
     
         assert (
