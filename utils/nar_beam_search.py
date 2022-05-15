@@ -112,7 +112,7 @@ class Beamsearch(object):
         self.mask = self.mask * update_mask
         self.mask[:, :, 0] = 3
         self.mask[self.mask == 0] = 1e10
-        self.mask[:, :, 0][(self.zero_num >= self.car_num).nonzero(as_tuple=True)] = 1e10
+        self.mask[:, :, 0][(self.zero_num >= self.car_num-1).nonzero(as_tuple=True)] = 1e10
 
 
     def sort_best(self):
