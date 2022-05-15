@@ -29,9 +29,9 @@ class Beamsearch(object):
         self.num_nodes = num_nodes
         self.device = device
         self.decode_type = decode_type
-        self.curr_cap = torch.zeros(batch_size, dtype=torch.int64).to(self.device)
+        self.curr_cap = torch.zeros(batch_size, self.beam_size, dtype=torch.int64).to(self.device)
         self.car_num = car_num
-        self.car_cap = torch.ones(batch_size, dtype=torch.int64).to(self.device)
+        self.car_cap = torch.ones(batch_size, self.beam_size, dtype=torch.int64).to(self.device)
         
         # Set beamsearch starting nodes
         self.start_nodes = torch.zeros(batch_size, beam_size, dtype=torch.long).to(self.device)
