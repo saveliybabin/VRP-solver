@@ -173,8 +173,8 @@ class Beamsearch(object):
         if len(out_temp) != 0:
             out_temp.append(0)
             out.append(torch.tensor(out_temp,  dtype=torch.int64).to(self.device))
-        return torch.tensor(out,  dtype=torch.int64).to(self.device)
-
+        return out
+    
     def get_cost(tour, x):
         dist_matrix = squareform(pdist(x[:, :2]))
         dist_matrix_ = dist_matrix.copy()
