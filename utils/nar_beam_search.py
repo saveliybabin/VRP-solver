@@ -215,7 +215,7 @@ class Beamsearch(object):
         for pos in tqdm(range(1, beam_size)):
             ends = pos * torch.ones(batch_size, 1).to(self.device)  # New positions
             hyp_tours = self.get_hypothesis(ends)
-            for idx in tqdm(range(len(hyp_tours))):
+            for idx in range(len(hyp_tours)):
                 hyp_nodes = hyp_tours[idx].to(self.device)
                 hyp_len = self.get_cost(hyp_nodes.to(self.device), graph[idx].to(self.device))
                 # Replace tour in shortest_tours if new length is shorter than current best
