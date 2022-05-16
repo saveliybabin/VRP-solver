@@ -209,7 +209,7 @@ class Beamsearch(object):
         # Compute current tour lengths
         shortest_lens = [1e6] * len(shortest_tours)
         for idx in range(len(shortest_tours)):
-            shortest_lens[idx] = get_cost(shortest_tours[idx].to(self.device), graph[idx].to(self.device))
+            shortest_lens[idx] = self.get_cost(shortest_tours[idx].to(self.device), graph[idx].to(self.device))
 
         # Iterate over all positions in beam (except position 0 --> highest probability)
         for pos in tqdm(range(1, beam_size)):
