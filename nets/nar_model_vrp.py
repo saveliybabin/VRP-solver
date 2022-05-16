@@ -23,6 +23,7 @@ class NARModel(nn.Module):
                  gated=True,
                  n_heads=8,
                  mask_graph=False,
+                 beam_size=1,
                  *args, **kwargs):
         """
         Models with a GNN/Transformer/MLP encoder and the Non-autoregressive decoder using attention mechanism
@@ -60,6 +61,7 @@ class NARModel(nn.Module):
         self.gated = gated
         self.n_heads = n_heads
         self.mask_graph = mask_graph
+        self.beam_size = beam_size
         
         # Input embedding layer
         self.init_embed_depot = nn.Linear(2, embedding_dim)
@@ -117,7 +119,7 @@ class NARModel(nn.Module):
 
         # Reinforcement learning or inference
         else:
-            _, log_p, pi, cost = self.greedy_search(nodes, graph, car_num)
+            _, log_p, pi, cost = self.greedy_search(nodes, graph, car_num, self.beam_size)
             ll = self._calc_log_likelihood(log_p[:, :, :, 1], pi)
 
             if return_pi:
@@ -218,7 +220,7 @@ class NARModel(nn.Module):
             beamsearch = Beamsearch(beam_size, batch_size, num_nodes, car_num, device=_log_p.device, decode_type=self.decode_type)
             trans_probs = _log_p.gather(1, beamsearch.get_current_state())
             for step in range(num_nodes - 1 + car_num - 1):
-                beamsearch.advance(trans_probs, demand)
+                beamsearch.advance(trans_probs, demand, step)
                 trans_probs = _log_p.gather(1, beamsearch.get_current_state())
 
             # Find TSP tour with highest probability among beam_size candidates
@@ -231,41 +233,42 @@ class NARModel(nn.Module):
 
             elif beam_size > 1:
                 # Beam search
-                sequences = []
-                costs = []
-                ids = []
+                pi, cost = get_best_tour_and_score(pi, demand, graph, beam_size)
+#                 sequences = []
+#                 costs = []
+#                 ids = []
                 
-                # Iterate over all positions in beam
-                for pos in range(0, beam_size):
-                    ends = pos * torch.ones(batch_size, 1, device=_log_p.device)  # New positions
+#                 # Iterate over all positions in beam
+#                 for pos in range(0, beam_size):
+#                     ends = pos * torch.ones(batch_size, 1, device=_log_p.device)  # New positions
                     
-                    try:
-                        pi_temp = beamsearch.get_hypothesis(ends)
-                        cost_temp, _ = self.problem.get_costs(nodes, pi_temp)
-                        cost_temp, pi_temp = cost_temp.cpu().numpy(), pi_temp.cpu().numpy()
+#                     try:
+#                         pi_temp = beamsearch.get_hypothesis(ends)
+#                         cost_temp, _ = self.problem.get_costs(nodes, pi_temp)
+#                         cost_temp, pi_temp = cost_temp.cpu().numpy(), pi_temp.cpu().numpy()
                         
-                        sequences.append(pi_temp)
-                        costs.append(cost_temp)
-                        ids.append(list(range(batch_size)))
+#                         sequences.append(pi_temp)
+#                         costs.append(cost_temp)
+#                         ids.append(list(range(batch_size)))
 
-                    except AssertionError:
-                        # Handles error if the temporary solution is an invalid tour
-                        continue
+#                     except AssertionError:
+#                         # Handles error if the temporary solution is an invalid tour
+#                         continue
                     
-                sequences = np.array(sequences)
-                costs = np.array(costs)
-                ids = np.array(ids)
+#                 sequences = np.array(sequences)
+#                 costs = np.array(costs)
+#                 ids = np.array(ids)
 
-                # Reshape/permute sequences, costs, ids
-                valid_beam, batch_size, num_nodes = sequences.shape
-                sequences = sequences.reshape(valid_beam * batch_size, num_nodes)
-                s_idx = []
-                for i in range(batch_size):
-                    for j in range(valid_beam):
-                        s_idx.append(i + j * batch_size)
+#                 # Reshape/permute sequences, costs, ids
+#                 valid_beam, batch_size, num_nodes = sequences.shape
+#                 sequences = sequences.reshape(valid_beam * batch_size, num_nodes)
+#                 s_idx = []
+#                 for i in range(batch_size):
+#                     for j in range(valid_beam):
+#                         s_idx.append(i + j * batch_size)
                 
-                # Get sequences and costs of shortest tours
-                pi, cost = get_best(sequences[s_idx], costs.T.flatten(), ids.T.flatten())
+#                 # Get sequences and costs of shortest tours
+#                 pi, cost = get_best(sequences[s_idx], costs.T.flatten(), ids.T.flatten())
 
         return logits, log_p, pi, cost
 
