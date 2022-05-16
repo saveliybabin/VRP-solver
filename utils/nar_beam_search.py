@@ -175,7 +175,7 @@ class Beamsearch(object):
             out.append(torch.tensor(out_temp,  dtype=torch.int64).to(self.device))
         return out
     
-    def get_cost(tour, x):
+    def get_cost(self, tour, x):
         dist_matrix = squareform(pdist(x[:, :2]))
         dist_matrix_ = dist_matrix.copy()
         dist_matrix_[(range(dist_matrix_.shape[0])), (range(dist_matrix_.shape[0]))] = 0
