@@ -272,8 +272,8 @@ class NARModel(nn.Module):
 
         return logits, log_p, pi, cost
 
-    def greedy_search(self, nodes, graph, car_num):
-        return self.beam_search(nodes, graph, car_num, beam_size=1)
+    def greedy_search(self, nodes, graph, car_num, beam_size=1):
+        return self.beam_search(nodes, graph, car_num, beam_size)
 
     def sample_many(self, nodes, graph, batch_rep=1, iter_rep=1):
         assert batch_rep == 1 and iter_rep == 1, "Sampling solutions is not supported. Use beam search instead."
