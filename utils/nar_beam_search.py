@@ -160,20 +160,20 @@ class Beamsearch(object):
         return hyp
     
     def array_separator(self, arr):
-    out = []
-    out_temp = [0]
-    for i in arr[1:]:
-        if i == 0:
-            if len(out_temp) != 1:
-                out_temp.append(0)
-                out.append(torch.tensor(out_temp,  dtype=torch.int64).to(self.device))
-            out_temp = [0]
-        else:
-            out_temp.append(i)
-    if len(out_temp) != 0:
-        out_temp.append(0)
-        out.append(torch.tensor(out_temp,  dtype=torch.int64).to(self.device))
-    return torch.tensor(out,  dtype=torch.int64).to(self.device)
+        out = []
+        out_temp = [0]
+        for i in arr[1:]:
+            if i == 0:
+                if len(out_temp) != 1:
+                    out_temp.append(0)
+                    out.append(torch.tensor(out_temp,  dtype=torch.int64).to(self.device))
+                out_temp = [0]
+            else:
+                out_temp.append(i)
+        if len(out_temp) != 0:
+            out_temp.append(0)
+            out.append(torch.tensor(out_temp,  dtype=torch.int64).to(self.device))
+        return torch.tensor(out,  dtype=torch.int64).to(self.device)
 
     def get_cost(tour, x):
         dist_matrix = squareform(pdist(x[:, :2]))
