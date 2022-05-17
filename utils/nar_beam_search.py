@@ -182,7 +182,7 @@ class Beamsearch(object):
         cost = dist_matrix_[tour[:-1], tour[1:]].sum()
         return cost
 
-    def is_valid_tour(self, tour, demand, car_num):
+    def is_valid_tour(self, tour, demand):
 
         """Sanity check: tour visits all nodes given and cope with capasities
         """
@@ -200,7 +200,7 @@ class Beamsearch(object):
             used_cap.append(demand[t].sum())
 
         c_check = (np.array(used_cap) <= 1.0 + 1e-5).all()
-        d_check = len(used_cap) <= car_num
+        d_check = len(used_cap) <= self.car_num
 
     #     print(np.int(a_check), np.int(b_check), np.int(c_check), np.int(d_check))
         return a_check and b_check and c_check and d_check
@@ -219,12 +219,12 @@ class Beamsearch(object):
                 hyp_nodes = hyp_tours[idx].to(self.device)
                 hyp_len = self.get_cost(hyp_nodes.to(self.device), graph[idx].to(self.device))
                 # Replace tour in shortest_tours if new length is shorter than current best
-                if self.is_valid_tour(shortest_tours[idx], demand[idx], car_num):  
-                    if hyp_len < shortest_lens[idx] and self.is_valid_tour(hyp_nodes, demand[idx], self.car_num):
+                if self.is_valid_tour(shortest_tours[idx], demand[idx]):  
+                    if hyp_len < shortest_lens[idx] and self.is_valid_tour(hyp_nodes, demand[idx]):
                         shortest_tours[idx] = hyp_tours[idx]
                         shortest_lens[idx] = hyp_len
                 else:
-                    if self.is_valid_tour(hyp_nodes, demand[idx], self.car_num):
+                    if self.is_valid_tour(hyp_nodes, demand[idx]):
                         shortest_tours[idx] = hyp_tours[idx]
                         shortest_lens[idx] = hyp_len
         return shortest_tours, shortest_lens
