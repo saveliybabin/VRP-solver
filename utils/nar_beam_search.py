@@ -191,7 +191,7 @@ class Beamsearch(object):
         sorted_pi = torch.sort(tour)[0]
         # Sorting it should give all zeros at front and then 1...n
 
-        a_check = (torch.arange(0, graph_size) == sorted_pi[-graph_size:]).all()
+        a_check = (torch.arange(0, graph_size).to(self.device) == sorted_pi[-graph_size:]).all()
         b_check = (sorted_pi[:-graph_size] == 0).all()
 
         # Visiting depot resets capacity so we add demand = -capacity (we make sure it does not become negative)
@@ -199,8 +199,8 @@ class Beamsearch(object):
         for t in self.array_separator(tour):
             used_cap.append(demand[t].sum())
 
-        c_check = (np.array(used_cap) <= 1.0 + 1e-5).all()
-        d_check = len(used_cap) <= self.car_num
+        c_check = (torch.tensor(used_cap).to(self.device) <= 1.0 + 1e-5).all()
+        d_check = len(torch.tensor(used_cap)) <= self.car_num
 
     #     print(np.int(a_check), np.int(b_check), np.int(c_check), np.int(d_check))
         return a_check and b_check and c_check and d_check
