@@ -205,26 +205,26 @@ class Beamsearch(object):
     #     print(np.int(a_check), np.int(b_check), np.int(c_check), np.int(d_check))
         return a_check and b_check and c_check and d_check
     
-    def get_best_tour_and_score(self, shortest_tours, demand, graph, beam_size):
+    def get_best_tour_and_score(self, shortest_tours, demand, graph):
         # Compute current tour lengths
         shortest_lens = [1e6] * len(shortest_tours)
         for idx in range(len(shortest_tours)):
             shortest_lens[idx] = self.get_cost(shortest_tours[idx].to(self.device), graph[idx].to(self.device))
 
         # Iterate over all positions in beam (except position 0 --> highest probability)
-        for pos in range(1, beam_size):
-            ends = pos * torch.ones(batch_size, 1).to(self.device)  # New positions
+        for pos in range(1, self.beam_size):
+            ends = pos * torch.ones(self.batch_size, 1).to(self.device)  # New positions
             hyp_tours = self.get_hypothesis(ends)
             for idx in range(len(hyp_tours)):
                 hyp_nodes = hyp_tours[idx].to(self.device)
                 hyp_len = self.get_cost(hyp_nodes.to(self.device), graph[idx].to(self.device))
                 # Replace tour in shortest_tours if new length is shorter than current best
                 if self.is_valid_tour(shortest_tours[idx], demand[idx], car_num):  
-                    if hyp_len < shortest_lens[idx] and self.is_valid_tour(hyp_nodes, demand[idx], car_num):
+                    if hyp_len < shortest_lens[idx] and self.is_valid_tour(hyp_nodes, demand[idx], self.car_num):
                         shortest_tours[idx] = hyp_tours[idx]
                         shortest_lens[idx] = hyp_len
                 else:
-                    if self.is_valid_tour(hyp_nodes, demand[idx], car_num):
+                    if self.is_valid_tour(hyp_nodes, demand[idx], self.car_num):
                         shortest_tours[idx] = hyp_tours[idx]
                         shortest_lens[idx] = hyp_len
         return shortest_tours, shortest_lens
