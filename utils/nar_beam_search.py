@@ -212,7 +212,7 @@ class Beamsearch(object):
             shortest_lens[idx] = self.get_cost(shortest_tours[idx].to(self.device), graph[idx].to(self.device))
 
         # Iterate over all positions in beam (except position 0 --> highest probability)
-        for pos in tqdm(range(1, beam_size)):
+        for pos in range(1, beam_size):
             ends = pos * torch.ones(batch_size, 1).to(self.device)  # New positions
             hyp_tours = self.get_hypothesis(ends)
             for idx in range(len(hyp_tours)):
