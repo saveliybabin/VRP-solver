@@ -233,7 +233,7 @@ class NARModel(nn.Module):
 
             elif beam_size > 1:
                 # Beam search
-                pi, cost = beamsearch.get_best_tour_and_score(pi, demand, graph, beam_size)
+                pi, cost = beamsearch.get_best_tour_and_score(pi, demand, graph)
 #                 sequences = []
 #                 costs = []
 #                 ids = []
