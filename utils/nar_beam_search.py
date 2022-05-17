@@ -227,4 +227,4 @@ class Beamsearch(object):
                     if self.is_valid_tour(hyp_nodes, demand[idx]):
                         shortest_tours[idx] = hyp_tours[idx]
                         shortest_lens[idx] = hyp_len
-        return shortest_tours, shortest_lens
+        return torch.tensor(shortest_tours).to(self.device), torch.tensor(shortest_lens).to(self.device)
