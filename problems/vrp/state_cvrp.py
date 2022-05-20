@@ -34,7 +34,7 @@ class StateCVRP(NamedTuple):
         return (self.coords[:, :, None, :] - self.coords[:, None, :, :]).norm(p=2, dim=-1)
 
     def __getitem__(self, key):
-        assert torch.is_tensor(key) or isinstance(key, slice)  # If tensor, idx all tensors by this tensor:
+#         assert torch.is_tensor(key) or isinstance(key, slice)  # If tensor, idx all tensors by this tensor:
         return self._replace(
             ids=self.ids[key],
             prev_a=self.prev_a[key],
