@@ -326,7 +326,7 @@ class AttentionModel(nn.Module):
         # Compute keys, values for the glimpse and keys for the logits for reuse
         fixed = self._precompute(embeddings)
 
-        batch_size, num_nodes, _ = nodes.shape
+        batch_size, num_nodes, _ = nodes['loc'].shape
 
         # Perform decoding steps
         i = 0
