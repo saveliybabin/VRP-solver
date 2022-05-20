@@ -77,7 +77,7 @@ class Beamsearch(object):
             beam_lk = trans_probs
             beam_lk[:, 1:] = -1e20 * torch.ones(beam_lk[:, 1:].size(), dtype=torch.float).to(self.device)
         # Multiply by mask
-        self.mask[:, :, 0] = 5
+        self.mask[:, :, 0] = 10
         self.mask[self.mask == 0] = 1e20
     #     self.mask[:, :, 0][(self.mask[:, :, 0] != 1e20).nonzero(as_tuple=True)] = 3
 
