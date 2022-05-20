@@ -269,8 +269,10 @@ def train_batch_sl(model, optimizer, epoch, batch_id,
     add_depot_loc = torch.cat((batch['depot'][:, None], batch['loc']), 1)
     pre_x = torch.cat((add_depot_loc, add_depot_demand[:, :, None]), 2)
     bat = {'loc' : batch['loc'], 'depot' : batch['depot'], 'demand' : batch['demand']}
-    x = move_to(pre_x, opts.device)
-#     x = move_to(bat, opts.device)
+    if opts.model == 'nar':
+        x = move_to(pre_x, opts.device)
+    else:
+        x = move_to(bat, opts.device)
     graph = move_to(batch['graph'], opts.device)
     car_num = (batch['tour_nodes'] == 0).sum() - 1
     
