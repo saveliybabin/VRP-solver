@@ -8,54 +8,6 @@ import torch.nn.functional as F
 from scipy.spatial.distance import pdist, squareform
 
 
-
-def array_separator(arr):
-    out = []
-    out_temp = [0]
-    for i in arr[1:]:
-        if i == 0:
-            if len(out_temp) != 1:
-                out_temp.append(0)
-                out.append(np.array(out_temp))
-            out_temp = [0]
-        else:
-            out_temp.append(i)
-    if len(out_temp) != 0:
-        out_temp.append(0)
-        out.append(np.array(out_temp)) 
-    return np.array(out)
-
-def get_cost(tour, x):
-    dist_matrix = squareform(pdist(x[:, :2].numpy()))
-    dist_matrix_ = dist_matrix.copy()
-    dist_matrix_[(range(dist_matrix_.shape[0])), (range(dist_matrix_.shape[0]))] = 0
-    cost = dist_matrix_[tour[:-1], tour[1:]].sum()
-    return cost
-
-def is_valid_tour(tour, demand, car_num):
-    
-    """Sanity check: tour visits all nodes given and cope with capasities
-    """
-    graph_size = demand.size()[0]
-    # Check that tours are valid, i.e. contain 0 to n -1
-    sorted_pi = torch.sort(tour)[0]
-    # Sorting it should give all zeros at front and then 1...n
-
-    a_check = (torch.arange(0, graph_size) == sorted_pi[-graph_size:]).all()
-    b_check = (sorted_pi[:-graph_size] == 0).all()
-
-    # Visiting depot resets capacity so we add demand = -capacity (we make sure it does not become negative)
-    used_cap = []
-    for t in array_separator(tour):
-        used_cap.append(demand[t].sum())
-    
-    c_check = (np.array(used_cap) <= 1.0 + 1e-5).all()
-    d_check = len(used_cap) <= car_num
-    
-#     print(np.int(a_check), np.int(b_check), np.int(c_check), np.int(d_check))
-    return a_check and b_check and c_check and d_check
-
-
 class Beamsearch(object):
     """Class for managing internals of beamsearch procedure.
     References:
@@ -125,7 +77,7 @@ class Beamsearch(object):
             beam_lk = trans_probs
             beam_lk[:, 1:] = -1e20 * torch.ones(beam_lk[:, 1:].size(), dtype=torch.float).to(self.device)
         # Multiply by mask
-        self.mask[:, :, 0] = 5
+        self.mask[:, :, 0] = 10
         self.mask[self.mask == 0] = 1e20
     #     self.mask[:, :, 0][(self.mask[:, :, 0] != 1e20).nonzero(as_tuple=True)] = 3
 
@@ -137,7 +89,7 @@ class Beamsearch(object):
                 ends = pos * torch.ones(self.batch_size, 1).to(self.device) 
                 hyp_tours = self.get_hypothesis(ends)
                 for idx in range(self.batch_size):
-                    current_demand[idx, pos] = demand[idx][(array_separator(hyp_tours[idx][:step+1])[-1])].sum()
+                    current_demand[idx, pos] = demand[idx][(self.array_separator(hyp_tours[idx][:step+1])[-1])].sum()
         #     self.mask[:, :, 0][(self.zero_num >= self.car_num).nonzero(as_tuple=True)] = 1e10
 
             # Check the nodes that will overdemand vehicles in the next step
@@ -207,26 +159,72 @@ class Beamsearch(object):
             k = self.prev_Ks[j].gather(1, k)
         return hyp
     
-    def get_best_tour_and_score(self, shortest_tours, demand, graph, beam_size):
+    def array_separator(self, arr):
+        out = []
+        out_temp = [0]
+        for i in arr[1:]:
+            if i == 0:
+                if len(out_temp) != 1:
+                    out_temp.append(0)
+                    out.append(torch.tensor(out_temp,  dtype=torch.int64).to(self.device))
+                out_temp = [0]
+            else:
+                out_temp.append(i)
+        if len(out_temp) != 0:
+            out_temp.append(0)
+            out.append(torch.tensor(out_temp,  dtype=torch.int64).to(self.device))
+        return out
+    
+    def get_cost(self, tour, x):
+        dist_matrix = squareform(pdist(x[:, :2].cpu().numpy()))
+        dist_matrix_ = torch.tensor(dist_matrix.copy(),  dtype=torch.float).to(self.device)
+        dist_matrix_[(np.arange(dist_matrix_.size(0))), (np.arange(dist_matrix_.size(0)))] = 0
+        cost = dist_matrix_[tour[:-1], tour[1:]].sum()
+        return cost
+
+    def is_valid_tour(self, tour, demand):
+
+        """Sanity check: tour visits all nodes given and cope with capasities
+        """
+        graph_size = demand.size()[0]
+        # Check that tours are valid, i.e. contain 0 to n -1
+        sorted_pi = torch.sort(tour)[0]
+        # Sorting it should give all zeros at front and then 1...n
+
+        a_check = (torch.arange(0, graph_size).to(self.device) == sorted_pi[-graph_size:]).all()
+        b_check = (sorted_pi[:-graph_size] == 0).all()
+
+        # Visiting depot resets capacity so we add demand = -capacity (we make sure it does not become negative)
+        used_cap = []
+        for t in self.array_separator(tour):
+            used_cap.append(demand[t].sum())
+
+        c_check = (torch.tensor(used_cap).to(self.device) <= 1.0 + 1e-5).all()
+        d_check = len(torch.tensor(used_cap)) <= self.car_num
+
+    #     print(np.int(a_check), np.int(b_check), np.int(c_check), np.int(d_check))
+        return a_check and b_check and c_check and d_check
+    
+    def get_best_tour_and_score(self, shortest_tours, demand, graph):
         # Compute current tour lengths
         shortest_lens = [1e6] * len(shortest_tours)
         for idx in range(len(shortest_tours)):
-            shortest_lens[idx] = get_cost(shortest_tours[idx].to(self.device), graph[idx].to(self.device))
+            shortest_lens[idx] = self.get_cost(shortest_tours[idx].to(self.device), graph[idx].to(self.device))
 
         # Iterate over all positions in beam (except position 0 --> highest probability)
-        for pos in tqdm(range(1, beam_size)):
-            ends = pos * torch.ones(batch_size, 1).to(self.device)  # New positions
+        for pos in range(1, self.beam_size):
+            ends = pos * torch.ones(self.batch_size, 1).to(self.device)  # New positions
             hyp_tours = self.get_hypothesis(ends)
-            for idx in tqdm(range(len(hyp_tours))):
+            for idx in range(len(hyp_tours)):
                 hyp_nodes = hyp_tours[idx].to(self.device)
-                hyp_len = get_cost(hyp_nodes.to(self.device), graph[idx].to(self.device))
+                hyp_len = self.get_cost(hyp_nodes.to(self.device), graph[idx].to(self.device))
                 # Replace tour in shortest_tours if new length is shorter than current best
-                if is_valid_tour(shortest_tours[idx], demand[idx], car_num):  
-                    if hyp_len < shortest_lens[idx] and is_valid_tour(hyp_nodes, demand[idx], car_num):
+                if self.is_valid_tour(shortest_tours[idx], demand[idx]):  
+                    if hyp_len < shortest_lens[idx] and self.is_valid_tour(hyp_nodes, demand[idx]):
                         shortest_tours[idx] = hyp_tours[idx]
                         shortest_lens[idx] = hyp_len
                 else:
-                    if is_valid_tour(hyp_nodes, demand[idx], car_num):
+                    if self.is_valid_tour(hyp_nodes, demand[idx]):
                         shortest_tours[idx] = hyp_tours[idx]
                         shortest_lens[idx] = hyp_len
-        return shortest_tours, shortest_lens
+        return torch.tensor(shortest_tours).to(self.device), torch.tensor(shortest_lens).to(self.device)
