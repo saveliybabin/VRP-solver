@@ -192,7 +192,7 @@ class AttentionModel(nn.Module):
             self.embeddings_batch = embeddings
 
         # Supervised learning
-        if self.problem.NAME == 'tspsl' and supervised:
+        if self.problem.NAME == 'cvrp' and supervised:
             assert targets is not None, "Pass targets during training in supervised mode"
             
             # Run inner function
