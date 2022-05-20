@@ -37,9 +37,14 @@ def get_instance_from_CVRPLIB(set_data = 'P', model = "P-n101-k4"):
     car_index = 0
     for i in range(len(solution_lines)-2):
         parse_solution = split(solution_lines[i], ' ')
+        new_tour = []
         tour.append(0)
-        for j in range(len(parse_solution) - 3):
+        new_tour.append(0)
+        for j in range(len(parse_solution) - 2):
             tour.append(np.int(parse_solution[j+2]))
+            new_tour.append(np.int(parse_solution[j+2]))
         tour.append(0)
-        paths[car_index] = tour
+        new_tour.append(0)
+        paths[car_index] = new_tour
+        car_index += 1
     return df, np.array(tour).astype(int), paths
