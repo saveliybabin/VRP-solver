@@ -345,7 +345,7 @@ class AttentionModel(nn.Module):
             log_p, mask = self._get_log_p(fixed, state)
             
             # Select the indices of the next nodes in the sequences
-            if self.problem.NAME == 'tspsl' and supervised:
+            if self.problem.NAME == 'cvrp' and supervised:
                 # Teacher-forcing during training in supervised mode
                 t_idx = torch.LongTensor([i]).to(nodes.device)
                 selected = targets.index_select(dim=-1, index=t_idx).view(batch_size)
