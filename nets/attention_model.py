@@ -194,7 +194,8 @@ class AttentionModel(nn.Module):
         # Supervised learning
         if self.problem.NAME == 'cvrp' and supervised:
             assert targets is not None, "Pass targets during training in supervised mode"
-            
+            print(nodes)
+            print(graph)
             # Run inner function
             _log_p, pi = self._inner(nodes, graph, embeddings, supervised=supervised, targets=targets)
             
