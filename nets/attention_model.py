@@ -297,7 +297,7 @@ class AttentionModel(nn.Module):
     def _init_embed(self, nodes):
         if self.is_vrp or self.is_orienteering or self.is_pctsp:
             if self.is_vrp:
-        features = ('demand', )
+                features = ('demand', )
             elif self.is_orienteering:
                 features = ('prize', )
             else:
