@@ -43,6 +43,7 @@ class AttentionModel(nn.Module):
                  embedding_dim,
                  encoder_class,
                  n_encode_layers,
+                 tanh_clipping=10.,
                  aggregation="sum",
                  aggregation_graph="mean",
                  normalization="layer",
@@ -50,13 +51,13 @@ class AttentionModel(nn.Module):
                  track_norm=False,
                  gated=True,
                  n_heads=8,
-                 tanh_clipping=10.0,
                  mask_inner=True,
                  mask_logits=True,
                  mask_graph=False,
                  checkpoint_encoder=False,
                  shrink_size=None,
                  extra_logging=False,
+                 decode_type = "greedy",
                  *args, **kwargs):
         """
         Models with a GNN/Transformer/MLP encoder and the Autoregressive decoder using attention mechanism
@@ -194,8 +195,6 @@ class AttentionModel(nn.Module):
         # Supervised learning
         if self.problem.NAME == 'cvrp' and supervised:
             assert targets is not None, "Pass targets during training in supervised mode"
-            print(nodes)
-            print(graph)
             # Run inner function
             _log_p, pi = self._inner(nodes, graph, embeddings, supervised=supervised, targets=targets)
             
@@ -327,7 +326,6 @@ class AttentionModel(nn.Module):
         fixed = self._precompute(embeddings)
 
         batch_size, num_nodes, _ = nodes['loc'].shape
-
         # Perform decoding steps
         i = 0
         while not (self.shrink_size is None and state.all_finished()):
@@ -350,12 +348,15 @@ class AttentionModel(nn.Module):
             # Select the indices of the next nodes in the sequences
             if self.problem.NAME == 'cvrp' and supervised:
                 # Teacher-forcing during training in supervised mode
-                t_idx = torch.LongTensor([i]).to(nodes.device)
+                t_idx = torch.LongTensor([i]).to(nodes['loc'].device)
                 selected = targets.index_select(dim=-1, index=t_idx).view(batch_size)
             
             else:
                 selected = self._select_node(
                     log_p.exp()[:, 0, :], mask[:, 0, :])  # Squeeze out steps dimension
+                if i == 0:
+                    selected = torch.zeros(selected.size()).type(torch.int64).to(nodes['loc'].device)
+                    log_p = log_p * 0 - 1e10
             
             # Update problem state
             state = state.update(selected)
@@ -374,7 +375,11 @@ class AttentionModel(nn.Module):
             sequences.append(selected)
 
             i += 1
-
+            
+        selected = torch.zeros(selected.size()).type(torch.int64).to(nodes['loc'].device)
+        log_p = log_p * 0 - 1e10
+        outputs.append(log_p[:, 0, :])
+        sequences.append(selected)
         # Collected lists, return Tensor
         return torch.stack(outputs, 1), torch.stack(sequences, 1)
 
@@ -480,7 +485,7 @@ class AttentionModel(nn.Module):
 
         return log_p, mask
 
-    def _get_parallel_step_context(self, embeddings, state, from_depot=False):
+    def _get_parallel_step_context(self, embeddings, state, from_depot=True):
         """
         Returns the context per step, optionally for multiple steps at once 
         (for efficient evaluation of the model)
