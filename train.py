@@ -54,8 +54,12 @@ def rollout(model, dataset, opts):
 #             print(bat['loc'])
             add_depot_demand = torch.cat((torch.zeros([bat['demand'].size()[0], 1]), bat['demand']), 1)
             add_depot_loc = torch.cat((bat['depot'][:, None], bat['loc']), 1)
-            x = torch.cat((add_depot_loc, add_depot_demand[:, :, None]), 2)
-            car_num = np.int((bat['tour_nodes'] == 0).sum(1).max()-1)
+            pre_x = torch.cat((add_depot_loc, add_depot_demand[:, :, None]), 2)
+            if opts.model == 'nar':
+                x = move_to(pre_x, opts.device)
+            else:
+                x = move_to(bat, opts.device)
+            car_num = (bat['tour_nodes'][0] == 0).sum().item() - 1
 
 #             all_loc = np.concatenate((np.array(bat['depot']).reshape(1, -1), np.array(bat['loc'])), 0)
 #             bat_all = torch.tensor(np.concatenate((all_loc, all_demand), 1), dtype=torch.float)
@@ -274,7 +278,7 @@ def train_batch_sl(model, optimizer, epoch, batch_id,
     else:
         x = move_to(bat, opts.device)
     graph = move_to(batch['graph'], opts.device)
-    car_num = (batch['tour_nodes'] == 0).sum() - 1
+    car_num = (batch['tour_nodes'][0] == 0).sum().item() - 1
     
     if opts.model == 'nar':
         targets = move_to(batch['adj'].long(), opts.device)
