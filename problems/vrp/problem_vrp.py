@@ -56,10 +56,10 @@ class CVRP(object):
 #         print((sorted_pi[:, :-graph_size] == 0).all())
         # Sorting it should give all zeros at front and then 1...n
     
-        assert (
-            torch.arange(0, graph_size, out=pi.data.new()).view(1, -1).expand(batch_size, graph_size) ==
-            sorted_pi[:, -graph_size:]
-        ).all() and (sorted_pi[:, :-graph_size] == 0).all(), "Invalid tour"
+#         assert (
+#             torch.arange(0, graph_size, out=pi.data.new()).view(1, -1).expand(batch_size, graph_size) ==
+#             sorted_pi[:, -graph_size:]
+#         ).all() and (sorted_pi[:, :-graph_size] == 0).all(), "Invalid tour"
 
         # Visiting depot resets capacity so we add demand = -capacity (we make sure it does not become negative)
         demand_with_depot = torch.cat(
