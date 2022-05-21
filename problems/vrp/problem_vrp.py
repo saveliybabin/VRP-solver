@@ -76,7 +76,7 @@ class CVRP(object):
             used_cap += d[:, i]  # This will reset/make capacity negative if i == 0, e.g. depot visited
             # Cannot use less than 0
             used_cap[used_cap < 0] = 0
-            assert (used_cap <= CVRP.VEHICLE_CAPACITY + 1e-5).all(), "Used more than capacity"
+            #assert (used_cap <= CVRP.VEHICLE_CAPACITY + 1e-5).all(), "Used more than capacity"
 
         # Gather dataset in order of tour
         loc_with_depot = dataset#torch.cat((dataset['depot'][:, None, :], dataset['loc']), 1)
