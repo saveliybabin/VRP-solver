@@ -209,7 +209,7 @@ class AttentionModel(nn.Module):
             logits = _log_p.permute(0, 2, 1)  # B x V x output_vocab -> B x output_vocab x V
             # Set -inf values to -1000 for handling NLL loss
             logits[logits == -float(np.inf)] = -1000  
-            loss = nn.NLLLoss(reduction='mean')(logits, targets)
+            loss = nn.NLLLoss(reduction='mean')(logits, targets[:, 1:-1])
             
             if return_pi:
                 return cost, loss, pi 
@@ -344,20 +344,26 @@ class AttentionModel(nn.Module):
 
             # Get log probabilities of next action
             log_p, mask = self._get_log_p(fixed, state)
-            
+
+            cap_mask = (1 - state.demand * mask.type(torch.int64)[:, :, 1:].squeeze(1) - state.used_capacity) < 0
+            depot_mask = (cap_mask).sum(1) < cap_mask.size(1)*0.5
+            cap_mask_upd = torch.cat((depot_mask[:, None], cap_mask), 1)
+            total_mask = torch.logical_or(mask[:, 0, :], cap_mask_upd)
+            total_depot = (total_mask).sum(1) < cap_mask.size(1)*0.5
+            total_mask[:, 0] =  torch.logical_and(total_mask[:, 0], total_depot)
+
             # Select the indices of the next nodes in the sequences
             if self.problem.NAME == 'cvrp' and supervised:
                 # Teacher-forcing during training in supervised mode
                 t_idx = torch.LongTensor([i]).to(nodes['loc'].device)
-                selected = targets.index_select(dim=-1, index=t_idx).view(batch_size)
-            
+                selected = targets[:, 1:].index_select(dim=-1, index=t_idx).view(batch_size)
+
             else:
+                probs = log_p.exp()[:, 0, :]*(1 - cap_mask_upd.type(torch.int64))
+                probs[: , 0] += 0.0001
                 selected = self._select_node(
-                    log_p.exp()[:, 0, :], mask[:, 0, :])  # Squeeze out steps dimension
-                if i == 0:
-                    selected = torch.zeros(selected.size()).type(torch.int64).to(nodes['loc'].device)
-                    log_p = log_p * 0 - 1e10
-            
+                    probs, total_mask)  # Squeeze out steps dimension
+
             # Update problem state
             state = state.update(selected)
 
@@ -376,10 +382,10 @@ class AttentionModel(nn.Module):
 
             i += 1
             
-        selected = torch.zeros(selected.size()).type(torch.int64).to(nodes['loc'].device)
-        log_p = log_p * 0 - 1e10
-        outputs.append(log_p[:, 0, :])
-        sequences.append(selected)
+#         selected = torch.zeros(selected.size()).type(torch.int64).to(nodes['loc'].device)
+#         log_p = log_p * 0 - 1e10
+#         outputs.append(log_p[:, 0, :])
+#         sequences.append(selected)
         # Collected lists, return Tensor
         return torch.stack(outputs, 1), torch.stack(sequences, 1)
 
@@ -399,11 +405,21 @@ class AttentionModel(nn.Module):
 
     def _select_node(self, probs, mask):
         assert (probs == probs).all(), "Probs should not contain any NaNs"
-
+        
         if self.decode_type == "greedy":
-            _, selected = probs.max(1)
-            assert not mask.gather(1, selected.unsqueeze(
-                -1)).data.any(), "Decode greedy: infeasible action has maximum probability"
+            get_node = False
+            while not get_node:
+                top = 1
+                try:
+                    _, selected = probs.max(top)
+                    assert not mask.gather(1, selected.unsqueeze(
+                        -1)).data.any(), "Decode greedy: infeasible action has maximum probability"
+                    get_node = True
+                except:
+                    top+=1
+                    continue
+                
+                
 
         elif self.decode_type == "sampling":
             selected = probs.multinomial(1).squeeze(1)
