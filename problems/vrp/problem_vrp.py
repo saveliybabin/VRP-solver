@@ -183,7 +183,7 @@ def make_instance_and_solution(self, args):
     all_demand =  np.concatenate((np.zeros(1), np.array(demand)), 0)
     graph = torch.ByteTensor(nearest_neighbor_graph(all_loc, self.neighbors, self.knn_strat))
     dist = pd.DataFrame(distance_function(all_loc, is_coord = False).values * graph.numpy())
-    nodes_cars_dist = {21: 5}
+    nodes_cars_dist = {21: 5, 51: 9, 101: 12}
     solution = main(all_demand, dist, cars = nodes_cars_dist[all_loc.shape[0]], cap = capacity)
     np.fill_diagonal(solution['adj'], 1)
     solution['adj'] =  torch.tensor(solution['adj'], dtype=torch.float)
